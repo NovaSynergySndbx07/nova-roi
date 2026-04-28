@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Calculadora ROI — Nova Synergy & Tech Partners</title>
+<meta name="description" content="Calcula el ROI de tu próxima inversión en tecnología empresarial. 7 módulos: Ciberseguridad, Onboarding, RH, Evaluación, Customer Engagement, Compras e IA Generativa."/>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>"/>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#1C2935;font-family:'Montserrat',sans-serif;color:#F8FAFC;min-height:100vh}
+::selection{background:#C9A84C44}
+input::-webkit-inner-spin-button,input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shine{0%{background-position:-200% center}100%{background-position:200% center}}
+.fu{animation:fadeUp .4s ease both}
+.hov{transition:transform .2s,box-shadow .2s;cursor:pointer}
+.hov:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.4)}
+.btn{border:none;cursor:pointer;font-family:'Montserrat',sans-serif;font-weight:700;border-radius:8px;transition:all .2s;letter-spacing:.03em}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.1)}
+.btn:active{transform:translateY(0)}
+.inp{width:100%;background:#243342;border:1.5px solid #2E3D4E;border-radius:8px;color:#F8FAFC;font-family:'Montserrat',sans-serif;font-size:14px;padding:12px 16px;transition:border .2s}
+.inp:focus{outline:none;border-color:#3B9DD2}
+.inp::placeholder{color:#8B9BAD}
+select.inp option{background:#1C2935}
+.gold-txt{background:linear-gradient(135deg,#C9A84C,#E2C06E,#C9A84C);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shine 3s linear infinite}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#1C2935}::-webkit-scrollbar-thumb{background:#2E3D4E;border-radius:3px}
+.tip-box{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);background:#0D1B26;border:1px solid #3B9DD244;border-radius:8px;padding:10px 13px;font-size:11px;color:#8B9BAD;line-height:1.65;width:250px;z-index:300;box-shadow:0 8px 28px rgba(0,0,0,.6);white-space:normal;display:none}
+.tip-wrap:hover .tip-box{display:block}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+
+<script>
+const {useState,useRef,createElement:h,Fragment}=React;
+const C={navy:"#1C2935",navyL:"#243342",blue:"#3B9DD2",blueL:"#5BB4E4",gold:"#C9A84C",goldL:"#E2C06E",white:"#F8FAFC",gray:"#8B9BAD",danger:"#E05C5C"};
+const fmt=n=>new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN",maximumFractionDigits:0}).format(n||0);
+const ps=n=>`${Number(n).toFixed(1)}%`;
+const LOGO="https://drive.google.com/thumbnail?id=1JawT23MSAtGi8Wqn143j8oFTUREMzmZx&sz=w400";
+const CAL="https://calendar.app.google/TDVtgv9HcFwV4jUg9";
+
+// ── TOOLTIP
+function Tip({text}){
+  const[show,setShow]=useState(false);
+  return h("span",{style:{position:"relative",display:"inline-block",marginLeft:6,verticalAlign:"middle"}},
+    h("span",{onClick:()=>setShow(s=>!s),onMouseEnter:()=>setShow(true),onMouseLeave:()=>setShow(false),
+      style:{display:"inline-flex",alignItems:"center",justifyContent:"center",width:16,height:16,borderRadius:"50%",background:"#2E3D4E",color:C.blue,fontSize:10,fontWeight:800,cursor:"pointer",userSelect:"none",border:`1px solid ${C.blue}55`,flexShrink:0}},"?"),
+    show&&h("div",{style:{position:"absolute",left:"50%",bottom:"calc(100% + 8px)",transform:"translateX(-50%)",background:"#0D1B26",border:`1px solid ${C.blue}44`,borderRadius:8,padding:"10px 13px",fontSize:11,color:C.gray,lineHeight:1.65,width:250,zIndex:300,boxShadow:"0 8px 28px rgba(0,0,0,.6)",whiteSpace:"normal"}},text)
+  );
+}
+
+// ── FORMULA BOX
+function FormulaBox({formula,vars,color}){
+  const[open,setOpen]=useState(false);
+  const col=color||C.blue;
+  return h("div",{style:{background:"#111E28",border:`1px solid ${col}30`,borderRadius:10,marginBottom:22,overflow:"hidden"}},
+    h("div",{onClick:()=>setOpen(o=>!o),style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 16px",cursor:"pointer"}},
+      h("span",{style:{fontSize:11,fontWeight:700,color:col,letterSpacing:".07em"}},"📐 VER FÓRMULA Y GLOSARIO DE VARIABLES"),
+      h("span",{style:{color:col,transition:"transform .2s",display:"inline-block",transform:open?"rotate(180deg)":"rotate(0deg)",fontSize:14}},"▾")
+    ),
+    open&&h("div",{style:{padding:"4px 16px 16px",borderTop:`1px solid ${col}20`}},
+      h("div",{style:{background:"#0D1B26",borderRadius:8,padding:"12px 16px",marginBottom:14,fontFamily:"monospace",fontSize:12,color:C.goldL,lineHeight:1.9}},
+        formula.map((line,i)=>h("div",{key:i},line||h("br",null)))
+      ),
+      h("div",{style:{fontSize:11,fontWeight:700,color:C.gray,letterSpacing:".07em",marginBottom:10}},"GLOSARIO DE VARIABLES"),
+      h("div",{style:{display:"flex",flexDirection:"column",gap:7}},
+        vars.map((v,i)=>h("div",{key:i,style:{display:"flex",gap:10,fontSize:11,lineHeight:1.6}},
+          h("span",{style:{color:C.gold,fontWeight:700,minWidth:110,fontFamily:"monospace",flexShrink:0}},v.name),
+          h("span",{style:{color:C.gray}},v.def)
+        ))
+      )
+    )
+  );
+}
+
+// ── WATERFALL
+function Waterfall({items,modColor}){
+  const maxAbs=Math.max(...items.filter(i=>!i.note&&i.v!==0).map(i=>Math.abs(i.v)),1);
+  return h("div",{style:{display:"flex",flexDirection:"column",gap:8}},
+    items.map((d,i)=>{
+      if(d.note)return h("div",{key:i,style:{fontSize:11,color:C.gray,fontStyle:"italic",padding:"7px 12px",background:"#1A2634",borderRadius:7}},"ℹ️ "+d.c);
+      const isNeg=d.v<0;
+      const barW=Math.min(100,Math.abs(d.v)/maxAbs*100);
+      return h("div",{key:i,style:{background:d.hi?`${modColor}16`:"transparent",border:`1px solid ${d.hi?modColor+"30":"transparent"}`,borderRadius:8,padding:"10px 14px"}},
+        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:d.v!==0?6:0}},
+          h("div",{style:{fontSize:12,color:d.hi?C.white:C.gray,fontWeight:d.hi?600:400,flex:1,paddingRight:12,lineHeight:1.5}},d.c),
+          d.v!==0&&h("div",{style:{fontSize:13,fontWeight:800,color:isNeg?C.danger:(d.hi?C.gold:C.blueL),whiteSpace:"nowrap"}},(isNeg?"":"+")+fmt(d.v))
+        ),
+        d.v!==0&&h("div",{style:{display:"flex",alignItems:"center",gap:8}},
+          h("div",{style:{flex:1,height:5,background:"#1A2634",borderRadius:3,overflow:"hidden"}},
+            h("div",{style:{height:"100%",width:`${barW}%`,background:isNeg?C.danger:(d.hi?C.gold:C.blue),borderRadius:3,transition:"width .7s ease"}})
+          ),
+          h("div",{style:{fontSize:9,color:isNeg?C.danger:(d.hi?C.gold:C.blueL),fontWeight:700,minWidth:36,textAlign:"right"}},barW.toFixed(0)+"%")
+        )
+      );
+    })
+  );
+}
+
+// ── ADVANCED TOGGLE
+function AdvToggle({on,onToggle,color}){
+  return h("div",{onClick:onToggle,style:{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:on?`${color}18`:"#1A2634",border:`1px solid ${on?color+"44":"#2E3D4E"}`,borderRadius:8,cursor:"pointer",marginBottom:20,transition:"all .2s",userSelect:"none"}},
+    h("div",{style:{width:36,height:20,background:on?color:"#2E3D4E",borderRadius:10,position:"relative",transition:"background .2s",flexShrink:0}},
+      h("div",{style:{position:"absolute",top:3,left:on?17:3,width:14,height:14,borderRadius:"50%",background:"#fff",transition:"left .2s",boxShadow:"0 1px 4px rgba(0,0,0,.4)"}})
+    ),
+    h("div",null,
+      h("div",{style:{fontSize:12,fontWeight:700,color:on?color:C.gray}},"Modo Avanzado "+(on?"activado":"desactivado")),
+      h("div",{style:{fontSize:10,color:C.gray,marginTop:1}},on?"Variables adicionales para análisis más detallado":"Activa para incluir más variables y mayor precisión")
+    )
+  );
+}
+
+// ── FIELD RENDERER
+function Field({f,vals,setVals,errs,setErrs}){
+  return h("div",{className:"fu"},
+    h("label",{style:{fontSize:12,fontWeight:700,display:"flex",alignItems:"center",marginBottom:7,flexWrap:"wrap",gap:2}},
+      h("span",null,f.label),
+      f.suffix&&h("span",{style:{color:C.gray,fontWeight:400,marginLeft:4}},"("+f.suffix+")"),
+      f.tip&&h(Tip,{text:f.tip})
+    ),
+    f.type==="select"
+      ?h("select",{className:"inp",value:vals[f.key]||f.options[0],onChange:e=>setVals(p=>({...p,[f.key]:e.target.value}))},
+          f.options.map(o=>h("option",{key:o},o)))
+      :h("input",{className:"inp",type:"number",placeholder:f.placeholder,value:vals[f.key]||"",min:"0",
+          onChange:e=>{setVals(p=>({...p,[f.key]:e.target.value}));setErrs(p=>({...p,[f.key]:null}))}}),
+    errs[f.key]&&h("div",{style:{fontSize:11,color:C.danger,marginTop:5}},"⚠ "+errs[f.key])
+  );
+}
+
+// ════════════════════════════════════════
+// MÓDULOS
+// ════════════════════════════════════════
+const MODULES=[
+{id:"cyber",label:"Ciberseguridad",icon:"🛡️",subtitle:"Cumplimiento · Pentesting · Monitoreo Dark Web",color:"#E05C5C",hasAdvanced:true,
+ description:"Cuantifica el riesgo financiero total de no proteger tu organización: incidentes, multas, downtime y daño reputacional.",
+ formula:["── MODO BÁSICO ──────────────────────────","REA = (Costo Incidente + Ingresos×8%) × P_incidente","Beneficio Neto = REA − Inversión Anual","ROI = (Beneficio Neto / Inversión Anual) × 100","","── MODO AVANZADO ────────────────────────","REA = (Costo Incidente × P_inc)","    + (Horas Downtime × Costo/hora × P_inc)","    + (Ingresos × 3% × P_multa)","    + (Ingresos × 5% × P_reputación)","    + (Costo Cumplimiento × P_inc)","    + (Costo Forense × P_inc)","Beneficio Neto = REA − Inversión Anual","ROI = (Beneficio Neto / Inversión Anual) × 100"],
+ formulaVars:[{name:"REA",def:"Riesgo Esperado Anual: pérdida financiera ponderada por la probabilidad de que ocurra un incidente."},{name:"P_incidente",def:"Probabilidad de sufrir un incidente sin protección: Alta=65%, Media=45%, Baja=20%."},{name:"Costo Incidente",def:"Respuesta de emergencia + recuperación de datos + notificaciones legales. Promedio LATAM PyME: $200k–$500k MXN."},{name:"Horas Downtime",def:"(Avanzado) Horas que la operación se detiene. Ransomware: 72–240h. DDoS: 4–24h."},{name:"Costo/hora op.",def:"(Avanzado) Pérdida por hora = (Nómina mensual ÷ 160) + ventas/hora + penalizaciones."},{name:"P_multa",def:"(Avanzado) Probabilidad de multa regulatoria (LFPDPPP, PCI-DSS, NOM-151). Se aplica al 3% del ingreso anual."},{name:"P_reputación",def:"(Avanzado) Probabilidad de perder clientes por daño reputacional. Se aplica al 5% del ingreso anual."},{name:"Costo Cumplimiento",def:"(Avanzado) Auditorías, consultores, certificaciones post-incidente."},{name:"Costo Forense",def:"(Avanzado) Honorarios de empresa forense digital: $80k–$250k MXN según complejidad."}],
+ fields:[{key:"ingresoAnual",label:"Ingreso anual de la empresa",suffix:"MXN/año",placeholder:"10000000",tip:"Facturación total anual. Se usa para dimensionar multas y daño reputacional proporcional."},{key:"empleados",label:"Número de empleados",suffix:"personas",placeholder:"80",tip:"Define la superficie de ataque (endpoints, cuentas) y el costo de remedición."},{key:"probabilidad",label:"Probabilidad de incidente sin protección",type:"select",options:["Alta (>60%) — sin controles básicos","Media (30–60%) — controles parciales","Baja (<30%) — controles básicos existentes"],tip:"Sin firewall actualizado ni backup automático → Alta. Con algunos controles pero sin monitoreo → Media."},{key:"costoIncidente",label:"Costo estimado de un incidente mayor",suffix:"MXN",placeholder:"350000",tip:"Forense ($50–150k) + recuperación ($50–200k) + notificaciones legales ($30–80k). PyME LATAM promedio: $200k–$500k MXN."},{key:"costoInversion",label:"Inversión mensual en ciberseguridad",suffix:"MXN/mes",placeholder:"35000",tip:"Pentesting + monitoreo 24/7 + dark web + cumplimiento. Referencia: $20k–$80k/mes según tamaño."}],
+ fieldsAdvanced:[{key:"horasDowntime",label:"Horas de inactividad en un incidente",suffix:"horas",placeholder:"72",tip:"Ransomware: 72–240h. DDoS: 4–24h. Usa tu peor escenario realista."},{key:"costoHoraOp",label:"Costo operativo por hora de inactividad",suffix:"MXN/hora",placeholder:"8000",tip:"(Nómina mensual ÷ 160h) + ventas/hora + penalizaciones. Para $1M/mes → ~$6,000–$12,000/hora."},{key:"costoMultaDirecta",label:"Multa regulatoria máxima estimada",suffix:"MXN",placeholder:"500000",tip:"LFPDPPP: hasta ~$30M MXN. PCI-DSS: $5k–$100k USD. Usa 3% de tu ingreso anual si no sabes."},{key:"costoForense",label:"Costo de análisis forense digital",suffix:"MXN",placeholder:"120000",tip:"Empresa especializada para determinar causa y alcance. Honorarios México: $80k–$250k MXN."},{key:"costoCumplimiento",label:"Costo de remediar incumplimientos regulatorios",suffix:"MXN",placeholder:"200000",tip:"Auditorías + consultores + certificaciones (ISO 27001, PCI). Estima $100k–$400k para empresas medianas."}],
+ calcROI:(v,adv)=>{
+   const prob=v.probabilidad.startsWith("Alta")?0.65:v.probabilidad.startsWith("Media")?0.45:0.20;
+   const invA=v.costoInversion*12; let rea=0,desglose=[];
+   if(!adv){
+     rea=(v.costoIncidente+v.ingresoAnual*0.08)*prob;
+     desglose=[{c:`Costo de incidente ponderado (×${ps(prob*100)})`,v:v.costoIncidente*prob},{c:`Pérdida operativa estimada (8% ingresos × ${ps(prob*100)})`,v:v.ingresoAnual*0.08*prob,hi:true},{c:"Riesgo Esperado Anual (REA) mitigado",v:rea,hi:true},{c:"Inversión anual en ciberseguridad",v:-invA},{c:"Beneficio neto anual",v:rea-invA,hi:true}];
+   } else {
+     const pM=prob*0.6,pR=prob*0.7;
+     const rI=v.costoIncidente*prob,rD=(v.horasDowntime||0)*(v.costoHoraOp||0)*prob,rM=(v.costoMultaDirecta||0)*pM,rR=v.ingresoAnual*0.05*pR,rF=(v.costoForense||0)*prob,rC=(v.costoCumplimiento||0)*prob;
+     rea=rI+rD+rM+rR+rF+rC;
+     desglose=[{c:`Costo directo del incidente (×${ps(prob*100)})`,v:rI},{c:`Downtime: ${v.horasDowntime||0}h × ${fmt(v.costoHoraOp||0)}/h × ${ps(prob*100)}`,v:rD},{c:`Multa regulatoria esperada (×${ps(pM*100)})`,v:rM},{c:`Daño reputacional (5% ingresos × ${ps(pR*100)})`,v:rR,hi:true},{c:`Forense digital (×${ps(prob*100)})`,v:rF},{c:`Remediación cumplimiento (×${ps(prob*100)})`,v:rC},{c:"REA TOTAL mitigado",v:rea,hi:true},{c:"Inversión anual",v:-invA},{c:"Beneficio neto anual",v:rea-invA,hi:true}];
+   }
+   const ben=rea-invA;
+   return{roi:((ben/invA)*100).toFixed(0),beneficio:ben,mensual:ben/12,
+     formulaAplicada:adv?[`REA = Incidente + Downtime + Multa + Reputación + Forense + Cumplimiento`,`REA = ${fmt(rea)}`,`Beneficio = ${fmt(rea)} − ${fmt(invA)} = ${fmt(ben)}`,`ROI = ${fmt(ben)} / ${fmt(invA)} × 100 = ${((ben/invA)*100).toFixed(0)}%`]:[`REA = (${fmt(v.costoIncidente)} + ${fmt(v.ingresoAnual)}×8%) × ${ps(prob*100)}`,`REA = ${fmt(rea)}`,`Beneficio = ${fmt(rea)} − ${fmt(invA)} = ${fmt(ben)}`,`ROI = ${fmt(ben)} / ${fmt(invA)} × 100 = ${((ben/invA)*100).toFixed(0)}%`],
+     desglose};
+ }},
+
+{id:"onboarding",label:"Onboarding Digital",icon:"🚀",subtitle:"Verificación · KYC · Incorporación automatizada",color:"#3B9DD2",hasAdvanced:false,
+ description:"Mide el ahorro operativo y los ingresos recuperados al reducir tiempos y abandono en el proceso de incorporación.",
+ formula:["Ahorro Operativo = (Días × 8h × 70%) × Costo/hora × Onboardings/mes × 12","Ingresos Recup. = Onboardings/mes × Abandono% × 60% × Valor/persona × 12","Beneficio Neto = Ahorro Operativo + Ingresos Recuperados − Inversión Anual","ROI = (Beneficio Neto / Inversión Anual) × 100"],
+ formulaVars:[{name:"70% automatiz.",def:"El 70% de tareas manuales (formularios, verificación, firma) se automatizan con plataforma digital."},{name:"60% recuperac.",def:"De quienes abandonaban, el 60% completan el proceso con un flujo digital optimizado."},{name:"Valor/persona",def:"CLIENTES: ticket promedio × frecuencia anual. EMPLEADOS: costo de reposición de plaza vacante ($30k–$80k típico)."}],
+ fields:[{key:"onboardingMensual",label:"Nuevos onboardings por mes",suffix:"personas/mes",placeholder:"60",tip:"Suma clientes nuevos + empleados nuevos si ambos usan el mismo proceso."},{key:"tiempoActual",label:"Duración actual del proceso",suffix:"días hábiles",placeholder:"4",tip:"Desde solicitud hasta aprobación. Incluye tiempos de espera entre pasos."},{key:"costoHoraRRHH",label:"Costo hora del equipo que gestiona el proceso",suffix:"MXN/hora",placeholder:"220",tip:"Salario bruto mensual ÷ 160 horas. Si gana $35,000/mes → $219/hora."},{key:"abandonoActual",label:"Tasa de abandono actual",suffix:"%",placeholder:"22",tip:"% que NO completan el proceso. Proceso deficiente: 20–35%. Con plataforma óptima: 5–10%."},{key:"valorPersonaAnual",label:"Valor anual por persona incorporada",suffix:"MXN/año",placeholder:"18000",tip:"CLIENTES: ticket × compras/año. EMPLEADOS: costo de reposición si la plaza queda vacante."},{key:"costoInversion",label:"Inversión mensual en plataforma",suffix:"MXN/mes",placeholder:"12000",tip:"Licencia + integraciones + soporte. Truora, IDenfy, Jumio → $8k–$25k/mes según volumen."}],
+ calcROI:(v)=>{
+   const hA=v.tiempoActual*8*0.70,aO=hA*v.costoHoraRRHH*v.onboardingMensual*12;
+   const rec=Math.round(v.onboardingMensual*(v.abandonoActual/100)*0.60*12),ing=rec*v.valorPersonaAnual;
+   const inv=v.costoInversion*12,ben=aO+ing-inv;
+   return{roi:((ben/inv)*100).toFixed(0),beneficio:ben,mensual:ben/12,
+     formulaAplicada:[`Horas ahorradas/persona = ${v.tiempoActual}d × 8h × 70% = ${hA.toFixed(1)}h`,`Ahorro Op. = ${hA.toFixed(1)}h × ${fmt(v.costoHoraRRHH)}/h × ${v.onboardingMensual} × 12 = ${fmt(aO)}`,`Recuperados = ${v.onboardingMensual} × ${v.abandonoActual}% × 60% × 12 = ${rec} personas`,`ROI = ${fmt(ben)} / ${fmt(inv)} × 100 = ${((ben/inv)*100).toFixed(0)}%`],
+     desglose:[{c:`Horas ahorradas: ${hA.toFixed(1)}h/persona × ${v.onboardingMensual} personas/mes × 12`,v:0,note:true},{c:"Ahorro operativo por automatización",v:aO},{c:`Ingresos recuperados por reducir abandono (${rec} personas/año)`,v:ing,hi:true},{c:"Inversión anual en plataforma",v:-inv},{c:"Beneficio neto anual",v:ben,hi:true}]};
+ }},
+
+{id:"rh",label:"Plataforma RH",icon:"👥",subtitle:"Retención · Engagement · Nómina inteligente",color:"#7C5CBF",hasAdvanced:true,
+ description:"Calcula el impacto de reducir rotación: ahorro en reclutamiento, capacitación, productividad y ausentismo.",
+ formula:["── MODO BÁSICO ──────────────────────────","Rotación Evitada = (Empleados × Tasa%) × 35%","Beneficio = Evitados × (Reclutamiento + Salario×2)","","── MODO AVANZADO ────────────────────────","Beneficio = Evitados × (Reclutamiento + Capacitación","            + Salario×2 + Ausentismo + Engag. Bonus)","ROI = (Beneficio Neto / Inversión Anual) × 100"],
+ formulaVars:[{name:"35% reducción",def:"Plataformas RH con engagement reducen rotación entre 25–45%. Usamos 35% conservador."},{name:"Salario×2",def:"2 meses de salario 'perdido' mientras el nuevo empleado alcanza productividad plena."},{name:"Ausentismo",def:"(Avanzado) Empleados sin engagement tienen 6 días más de ausentismo/año (Gallup)."},{name:"Engag. Bonus",def:"(Avanzado) Empleados comprometidos son 21% más productivos. Se aplica sobre nómina de retenidos."}],
+ fields:[{key:"empleados",label:"Total de empleados",suffix:"personas",placeholder:"120",tip:"Número actual de colaboradores activos en todas las sucursales."},{key:"rotacionActual",label:"Tasa de rotación anual actual",suffix:"%",placeholder:"22",tip:"(Bajas en el año ÷ Promedio de empleados) × 100. Pídela directamente a RRHH."},{key:"salarioPromedio",label:"Salario mensual bruto promedio",suffix:"MXN/mes",placeholder:"18000",tip:"Usa el promedio del nivel operativo-medio que más rota."},{key:"costoReclutamiento",label:"Costo de reclutamiento por plaza",suffix:"MXN/plaza",placeholder:"45000",tip:"Publicaciones + tiempo RRHH + agencia headhunter + exámenes. Total típico: $25k–$80k MXN."},{key:"costoInversion",label:"Inversión mensual en plataforma RH",suffix:"MXN/mes",placeholder:"9000",tip:"Buk, Factorial, etc. + implementación prorrateada. Referencia: $5k–$20k/mes."}],
+ fieldsAdvanced:[{key:"costoCapacitacion",label:"Costo de capacitación por nuevo empleado",suffix:"MXN/persona",placeholder:"12000",tip:"Cursos + materiales + tiempo de tutor interno. 2 semanas con mentor a $20k/mes ≈ $10k."},{key:"diasAusentismo",label:"Días de ausentismo adicional por empleado sin engagement",suffix:"días/año",placeholder:"6",tip:"Benchmark Gallup: 6 días más de faltas/año vs. empleados comprometidos."},{key:"bonusProductividad",label:"Incremento de productividad en empleados retenidos",suffix:"%",placeholder:"15",tip:"Gallup: 21% más productividad en equipos comprometidos. Usa 10–21% según industria."}],
+ calcROI:(v,adv)=>{
+   const rA=Math.round(v.empleados*(v.rotacionActual/100)),ev=Math.round(rA*0.35);
+   const aD=ev*v.costoReclutamiento,aP=ev*v.salarioPromedio*2,inv=v.costoInversion*12;
+   let ben,desglose;
+   if(!adv){ben=aD+aP-inv;desglose=[{c:`Empleados que rotan: ${rA}/año → Evitados (35%): ${ev}`,v:0,note:true},{c:"Ahorro en reclutamiento",v:aD},{c:"Ahorro en productividad (2 meses/plaza)",v:aP,hi:true},{c:"Inversión anual plataforma RH",v:-inv},{c:"Beneficio neto anual",v:ben,hi:true}];}
+   else{const aC=ev*(v.costoCapacitacion||0),aA=v.empleados*(v.diasAusentismo||6)*(v.salarioPromedio/22),aE=(v.empleados*0.35)*v.salarioPromedio*12*((v.bonusProductividad||15)/100);ben=aD+aP+aC+aA+aE-inv;desglose=[{c:`Empleados que rotan: ${rA}/año → Evitados: ${ev}`,v:0,note:true},{c:"Ahorro en reclutamiento",v:aD},{c:"Ahorro en productividad (2 meses/plaza)",v:aP},{c:"Ahorro en capacitación e inducción",v:aC},{c:`Reducción ausentismo (${v.diasAusentismo||6} días/empleado/año)`,v:aA,hi:true},{c:`Ganancia por mayor compromiso (+${v.bonusProductividad||15}%)`,v:aE,hi:true},{c:"Inversión anual plataforma RH",v:-inv},{c:"Beneficio neto anual",v:ben,hi:true}];}
+   return{roi:((ben/inv)*100).toFixed(0),beneficio:ben,mensual:ben/12,formulaAplicada:[`Rotación actual: ${rA}/año × 35% = ${ev} plazas evitadas`,`Ahorro = ${ev} × (${fmt(v.costoReclutamiento)} + ${fmt(v.salarioPromedio)}×2) = ${fmt(aD+aP)}`,`ROI = ${fmt(ben)} / ${fmt(inv)} × 100 = ${((ben/inv)*100).toFixed(0)}%`],desglose};
+ }},
+
+{id:"eval",label:"Evaluación de Candidatos y Proveedores",icon:"🔍",subtitle:"Background Check · Due Diligence · Círculo Laboral",color:"#2E8B6E",hasAdvanced:false,
+ description:"Cuantifica el costo real de contratar personas o proveedores sin validación adecuada.",
+ formula:["Casos Evitados/año = Incorporaciones/mes × Tasa% × 75% × 12","Ahorro = Casos Evitados × Costo por Caso Malo","Ahorro Legal = Casos Evitados × Costo Legal × 30%","Beneficio Neto = (Ahorro + Ahorro Legal) − Inversión Anual","ROI = (Beneficio Neto / Inversión Anual) × 100"],
+ formulaVars:[{name:"75% efectividad",def:"Con verificación formal se evita ~75% de casos problemáticos. El 25% restante son situaciones impredecibles."},{name:"Costo caso malo",def:"EMPLEADO: liquidación + tiempo + reposición = $50k–$120k. PROVEEDOR: penalizaciones + búsqueda urgente."},{name:"30% litigios",def:"El 30% de los casos malos derivan en disputa legal con honorarios y tiempo del área jurídica."}],
+ fields:[{key:"incorporacionesMes",label:"Incorporaciones o altas de proveedores por mes",suffix:"por mes",placeholder:"12",tip:"Suma empleados nuevos + proveedores nuevos + contratistas evaluados por mes."},{key:"tasaMala",label:"Tasa de casos problemáticos sin validación",suffix:"%",placeholder:"18",tip:"Sin verificación formal en LATAM: 15–22% promedio. Ajusta según tu experiencia."},{key:"costoMala",label:"Costo promedio por caso malo",suffix:"MXN/caso",placeholder:"85000",tip:"EMPLEADO: $50k–$120k (liquidación + reposición). PROVEEDOR: penalizaciones + búsqueda urgente."},{key:"costoLegal",label:"Costo promedio de un litigio o disputa legal",suffix:"MXN/caso",placeholder:"60000",tip:"Honorarios abogado externo ($30–100k) + tiempo área legal + posibles indemnizaciones."},{key:"costoInversion",label:"Inversión mensual en plataforma de evaluación",suffix:"MXN/mes",placeholder:"6500",tip:"Costo por consulta × volumen. Círculo de Crédito Laboral, Truora, Certiffy → $4k–$12k/mes."}],
+ calcROI:(v)=>{
+   const cM=Math.round(v.incorporacionesMes*(v.tasaMala/100)*12),ev=Math.round(cM*0.75);
+   const aS=ev*v.costoMala,aL=ev*v.costoLegal*0.30,inv=v.costoInversion*12,ben=aS+aL-inv;
+   return{roi:((ben/inv)*100).toFixed(0),beneficio:ben,mensual:ben/12,formulaAplicada:[`Casos malos/año = ${v.incorporacionesMes} × ${v.tasaMala}% × 12 = ${cM}`,`Evitados = ${cM} × 75% = ${ev} casos/año`,`Ahorro = ${ev} × ${fmt(v.costoMala)} + ${ev} × ${fmt(v.costoLegal)} × 30% = ${fmt(aS+aL)}`,`ROI = ${fmt(ben)} / ${fmt(inv)} × 100 = ${((ben/inv)*100).toFixed(0)}%`],
+     desglose:[{c:`Casos problemáticos actuales: ${cM}/año → Evitados con validación: ${ev}`,v:0,note:true},{c:"Ahorro por evitar malas contrataciones y proveedores fallidos",v:aS,hi:true},{c:`Ahorro en litigios evitados (30% de ${ev} casos)`,v:aL},{c:"Inversión anual en plataforma",v:-inv},{c:"Beneficio neto anual",v:ben,hi:true}]};
+ }},
+
+{id:"engagement",label:"Customer Engagement",icon:"💡",subtitle:"Reducción de Churn · Retención · LTV",color:"#D4622A",hasAdvanced:true,
+ description:"Mide el impacto financiero de retener más clientes con automatización de comunicación y personalización.",
+ formula:["── MODO BÁSICO ──────────────────────────","Retenidos/mes = Clientes × Churn% × 30%","Ingreso Retenido = Retenidos × Ticket × LTV × 12","Ahorro CAC = Retenidos × 12 × CAC","","── MODO AVANZADO ────────────────────────","+ Upsell = Retenidos × Ticket × Upsell% × 12","+ Referidos = Retenidos × 12 × Ref% × Ticket × LTV","ROI = (Beneficio Neto / Inversión Anual) × 100"],
+ formulaVars:[{name:"30% mejora churn",def:"Plataformas de engagement reducen churn en 25–40%. Usamos 30% conservador."},{name:"LTV meses",def:"Vida útil promedio del cliente. Cálculo: 1 ÷ churn mensual. Con 3.5% → LTV ≈ 29 meses."},{name:"CAC",def:"Costo de Adquisición de Cliente. Retener es 5–7× más barato que adquirir."},{name:"Upsell",def:"(Avanzado) Clientes con engagement gastan más. Benchmark: 10–20% más de ticket."},{name:"Referidos",def:"(Avanzado) 8–15% de clientes satisfechos refieren a otro cliente (NPS effect)."}],
+ fields:[{key:"clientesActivos",label:"Clientes activos en tu base",suffix:"clientes",placeholder:"1500",tip:"Clientes que compraron al menos una vez en los últimos 6 meses."},{key:"churnMensual",label:"Tasa de churn mensual actual",suffix:"%",placeholder:"3.5",tip:"Clientes que cancelan en un mes ÷ total activos × 100. SaaS sano: <2%. Retail: 3–6%."},{key:"ticketMensual",label:"Ingreso mensual promedio por cliente",suffix:"MXN/mes",placeholder:"1400",tip:"Ingresos del mes ÷ clientes activos. Para suscripciones: precio del plan."},{key:"ltvMeses",label:"Vida útil promedio del cliente (LTV)",suffix:"meses",placeholder:"18",tip:"Si no lo sabes: 1 ÷ churn mensual. Con 3.5% → LTV ≈ 29 meses."},{key:"cac",label:"Costo de adquisición de cliente (CAC)",suffix:"MXN/cliente",placeholder:"3800",tip:"Gasto mktg+ventas en un mes ÷ nuevos clientes ese mes."},{key:"costoInversion",label:"Inversión mensual en plataforma de engagement",suffix:"MXN/mes",placeholder:"18000",tip:"CleverTap, Braze, HubSpot + implementación. Referencia: $10k–$35k/mes."}],
+ fieldsAdvanced:[{key:"upsellPct",label:"Incremento de ticket con personalización (upsell)",suffix:"%",placeholder:"12",tip:"% adicional que gastan clientes con recomendaciones personalizadas. E-commerce: 10–20%. SaaS: 8–15%."},{key:"referidosPct",label:"% de clientes retenidos que refieren nuevos clientes",suffix:"%",placeholder:"8",tip:"NPS >50 → usa 10–15%. NPS 30–50 → usa 5–10%."}],
+ calcROI:(v,adv)=>{
+   const ret=Math.round(v.clientesActivos*(v.churnMensual/100)*0.30),iR=ret*v.ticketMensual*v.ltvMeses*12,aC=ret*12*v.cac,inv=v.costoInversion*12;
+   let ben,desglose;
+   if(!adv){ben=iR+aC-inv;desglose=[{c:`Clientes retenidos: ${ret}/mes (30% mejora churn)`,v:0,note:true},{c:`Ingreso retenido (LTV ${v.ltvMeses}m × ${fmt(v.ticketMensual)}/mes)`,v:iR,hi:true},{c:`Ahorro CAC (${ret*12} clientes no repuestos)`,v:aC},{c:"Inversión anual",v:-inv},{c:"Beneficio neto anual",v:ben,hi:true}];}
+   else{const up=ret*v.ticketMensual*((v.upsellPct||12)/100)*12,refs=Math.round(ret*12*((v.referidosPct||8)/100)),vR=refs*v.ticketMensual*v.ltvMeses;ben=iR+aC+up+vR-inv;desglose=[{c:`Clientes retenidos: ${ret}/mes`,v:0,note:true},{c:"Ingreso retenido por menor churn",v:iR,hi:true},{c:`Ahorro CAC (${ret*12} clientes no repuestos)`,v:aC},{c:`Upsell por personalización (+${v.upsellPct||12}%)`,v:up},{c:`Valor de referidos (~${refs}/año × LTV)`,v:vR,hi:true},{c:"Inversión anual",v:-inv},{c:"Beneficio neto anual",v:ben,hi:true}];}
+   return{roi:((ben/inv)*100).toFixed(0),beneficio:ben,mensual:ben/12,formulaAplicada:[`Retenidos/mes = ${v.clientesActivos} × ${v.churnMensual}% × 30% = ${ret}`,`Ing. retenido = ${ret} × ${fmt(v.ticketMensual)} × ${v.ltvMeses}m × 12 = ${fmt(iR)}`,`ROI = ${fmt(ben)} / ${fmt(inv)} × 100 = ${((ben/inv)*100).toFixed(0)}%`],desglose};
+ }},
+
+{id:"compras",label:"Capacitación Estratégica de Compras",icon:"📦",subtitle:"Rentabilidad · Negociación · Procura basada en datos",color:"#8B7536",hasAdvanced:false,
+ description:"Evalúa el retorno de capacitar al área de compras en negociación basada en rentabilidad.",
+ formula:["Ahorro Negociación = Presupuesto × % Mejora","Ahorro Errores    = Presupuesto × 1.5%","Mejora Condiciones= Presupuesto × 0.8%","Beneficio Neto = Suma Ahorros − Inversión Capacitación","ROI = (Beneficio Neto / Inversión) × 100"],
+ formulaVars:[{name:"Presupuesto anual",def:"Todo lo que compras gestiona en un año. Estimación rápida: nómina total × 0.4 en empresas de servicios."},{name:"% Mejora negoc.",def:"Conservadora 3%: mejoras básicas. Moderada 6%: con datos y comparativos. Agresiva 10%: metodología estructurada."},{name:"1.5% errores",def:"Órdenes mal especificadas, pagos duplicados, penalizaciones evitadas."},{name:"0.8% condiciones",def:"Mejores plazos de pago, garantías extendidas y mejores SLAs de servicio."}],
+ fields:[{key:"presupuesto",label:"Presupuesto anual de compras gestionado",suffix:"MXN/año",placeholder:"4000000",tip:"Materiales + servicios + software + mantenimiento + logística. Estimación: nómina × 0.4 en empresas de servicios."},{key:"personasCompras",label:"Personas en el área de compras",suffix:"personas",placeholder:"5",tip:"Compradores y analistas que negocian directamente con proveedores."},{key:"mejora",label:"Mejora esperada post-capacitación",type:"select",options:["Conservadora (3%) — mejoras en términos básicos","Moderada (6%) — negociación con datos y comparativos","Agresiva (10%) — metodología estructurada y benchmarks"],tip:"Sin capacitación formal previa, incluso la opción conservadora subestima el impacto."},{key:"costoCapacitacion",label:"Inversión total en capacitación",suffix:"MXN",placeholder:"55000",tip:"Facilitador + materiales + tiempo del equipo. Taller 2 días para 5 personas: $30k–$80k MXN."}],
+ calcROI:(v)=>{
+   const p=v.mejora.startsWith("Conservadora")?0.03:v.mejora.startsWith("Agresiva")?0.10:0.06;
+   const aN=v.presupuesto*p,aE=v.presupuesto*0.015,aC=v.presupuesto*0.008,tot=aN+aE+aC,ben=tot-v.costoCapacitacion;
+   return{roi:((ben/v.costoCapacitacion)*100).toFixed(0),beneficio:ben,mensual:ben/12,formulaAplicada:[`Ahorro negociación = ${fmt(v.presupuesto)} × ${(p*100).toFixed(0)}% = ${fmt(aN)}`,`Ahorro errores = ${fmt(v.presupuesto)} × 1.5% = ${fmt(aE)}`,`Mejora condiciones = ${fmt(v.presupuesto)} × 0.8% = ${fmt(aC)}`,`ROI = ${fmt(ben)} / ${fmt(v.costoCapacitacion)} × 100 = ${((ben/v.costoCapacitacion)*100).toFixed(0)}%`],
+     desglose:[{c:`Ahorro en negociación (${(p*100).toFixed(0)}% sobre ${fmt(v.presupuesto)})`,v:aN,hi:true},{c:"Ahorro por reducción de errores (1.5%)",v:aE},{c:"Mejora en condiciones contractuales (0.8%)",v:aC},{c:"Inversión en capacitación",v:-v.costoCapacitacion},{c:"Beneficio neto primer año",v:ben,hi:true}]};
+ }},
+
+{id:"ia",label:"IA Generativa en Procesos",icon:"🤖",subtitle:"Automatización · Eficiencia · Transformación Digital",color:"#3B9DD2",hasAdvanced:true,
+ description:"Proyecta el impacto de integrar IA Generativa en procesos clave: redacción, análisis, atención y reporting.",
+ formula:["── MODO BÁSICO ──────────────────────────","Horas Automatz. = Empleados × Hrs/sem × % × 52","Ahorro = Horas × Costo/hora × 1.30 (calidad)","Beneficio Neto = Ahorro − Inversión Anual","","── MODO AVANZADO ────────────────────────","+ Reducción Errores = Ahorro Op. × % Error × 50%","+ Time-to-Market = Proyectos × Días × Costo/día","ROI = (Beneficio Neto / Inversión Anual) × 100"],
+ formulaVars:[{name:"% automatizable",def:"1–2 procesos=25%, 3–5 procesos=45%, 6+=65%. La IA asiste, no reemplaza completamente."},{name:"×1.30 calidad",def:"Equipos con IA producen outputs de mayor calidad. 30% de valor adicional sobre horas ahorradas."},{name:"Reducción errores",def:"(Avanzado) IA reduce errores en documentos y reportes. Benchmark: 15–35% según proceso."},{name:"Time-to-Market",def:"(Avanzado) IA acelera entregables. Cada día adelantado tiene valor medible en ventas o pauta."}],
+ fields:[{key:"empleados",label:"Empleados con tareas repetitivas o de análisis",suffix:"personas",placeholder:"35",tip:"Mayor potencial: marketing, operaciones, finanzas, ventas, RRHH, legal."},{key:"horasSemana",label:"Horas semanales en tareas automatizables",suffix:"hrs/semana",placeholder:"10",tip:"Correos tipo (1–2h), reportes (2–3h), análisis de datos (2–4h), presentaciones (1–3h)."},{key:"costoHora",label:"Costo hora promedio del equipo",suffix:"MXN/hora",placeholder:"185",tip:"(Salario bruto × 1.35) ÷ 160 horas. Ej: $22,000 × 1.35 = $29,700 ÷ 160h = $185/h."},{key:"procesos",label:"Procesos clave a automatizar",type:"select",options:["1–2 procesos (implementación focalizada)","3–5 procesos (transformación intermedia)","6+ procesos (transformación amplia)"],tip:"Empieza con 1–2 procesos de alto volumen y bajo riesgo. Escala según resultados."},{key:"costoInversion",label:"Inversión mensual en IA (licencias + implementación)",suffix:"MXN/mes",placeholder:"22000",tip:"Claude API, ChatGPT Enterprise, Copilot ($5k–$15k/mes) + implementación prorrateada."}],
+ fieldsAdvanced:[{key:"pctErrores",label:"Reducción de errores en documentos con IA",suffix:"%",placeholder:"20",tip:"IA reduce errores tipográficos, de cálculo e inconsistencias. Benchmark: 15–35% según proceso."},{key:"proyectosAno",label:"Proyectos o lanzamientos por año que se aceleran",suffix:"proyectos/año",placeholder:"8",tip:"Campañas, lanzamientos de producto, reportes periódicos, propuestas comerciales."},{key:"diasAceleracion",label:"Días de aceleración por proyecto con IA",suffix:"días/proyecto",placeholder:"5",tip:"Campañas de contenido: 3–7 días. Reportes: 1–3 días. Propuestas: 2–5 días."},{key:"costoDiaProyecto",label:"Valor económico de un día adelantado",suffix:"MXN/día",placeholder:"15000",tip:"Para lanzamientos: ingreso/día de ventas. Para campañas: inversión en pauta activada antes."}],
+ calcROI:(v,adv)=>{
+   const mult=v.procesos.startsWith("1–2")?0.25:v.procesos.startsWith("6+")?0.65:0.45;
+   const hA=v.horasSemana*mult*v.empleados*52,aO=hA*v.costoHora,gC=aO*0.30,inv=v.costoInversion*12;
+   let ben,desglose;
+   if(!adv){ben=aO+gC-inv;desglose=[{c:`Horas automatz.: ${hA.toFixed(0)} hrs/año (${v.empleados} personas × ${(mult*100).toFixed(0)}% de ${v.horasSemana}h/sem)`,v:0,note:true},{c:"Ahorro operativo por automatización",v:aO},{c:"Ganancia por mayor calidad y velocidad (+30%)",v:gC,hi:true},{c:"Inversión anual en IA",v:-inv},{c:"Beneficio neto anual",v:ben,hi:true}];}
+   else{const aE=aO*((v.pctErrores||20)/100)*0.5,vT=(v.proyectosAno||8)*(v.diasAceleracion||5)*(v.costoDiaProyecto||15000);ben=aO+gC+aE+vT-inv;desglose=[{c:`Horas automatz.: ${hA.toFixed(0)} hrs/año`,v:0,note:true},{c:"Ahorro operativo por automatización",v:aO},{c:"Ganancia por calidad y velocidad (+30%)",v:gC},{c:`Ahorro por reducción de errores (${v.pctErrores||20}% × 50%)`,v:aE,hi:true},{c:`Time-to-Market: ${v.proyectosAno||8} proyectos × ${v.diasAceleracion||5}d × ${fmt(v.costoDiaProyecto||15000)}/día`,v:vT,hi:true},{c:"Inversión anual en IA",v:-inv},{c:"Beneficio neto anual",v:ben,hi:true}];}
+   return{roi:((ben/inv)*100).toFixed(0),beneficio:ben,mensual:ben/12,formulaAplicada:[`Horas = ${v.empleados} × ${v.horasSemana}h × ${(mult*100).toFixed(0)}% × 52 = ${hA.toFixed(0)}h/año`,`Ahorro Op. = ${hA.toFixed(0)}h × ${fmt(v.costoHora)}/h = ${fmt(aO)}`,`Ganancia calidad = ${fmt(aO)} × 30% = ${fmt(gC)}`,`ROI = ${fmt(ben)} / ${fmt(inv)} × 100 = ${((ben/inv)*100).toFixed(0)}%`],desglose};
+ }}
+];
+
+// ════════════════════════════════════════
+// APP PRINCIPAL
+// ════════════════════════════════════════
+function App(){
+  const[step,setStep]=useState("home");
+  const[mod,setMod]=useState(null);
+  const[vals,setVals]=useState({});
+  const[adv,setAdv]=useState(false);
+  const[res,setRes]=useState(null);
+  const[lead,setLead]=useState({nombre:"",email:"",whatsapp:"",empresa:""});
+  const[errs,setErrs]=useState({});
+  const[sent,setSent]=useState(false);
+  const[showFA,setShowFA]=useState(false);
+  const topRef=useRef(null);
+
+  const go=s=>{setStep(s);setTimeout(()=>topRef.current&&topRef.current.scrollIntoView({behavior:"smooth"}),60);};
+  const pick=m=>{setMod(m);setVals({});setRes(null);setErrs({});setAdv(false);setShowFA(false);go("calc");};
+
+  const calc=()=>{
+    const all=[...(mod.fields||[]),...(adv?(mod.fieldsAdvanced||[]):[])];
+    const e={};
+    all.forEach(f=>{if(f.type!=="select"&&(!vals[f.key]||Number(vals[f.key])<=0))e[f.key]="Valor requerido";});
+    if(Object.keys(e).length){setErrs(e);return;}
+    const nv={};
+    all.forEach(f=>{nv[f.key]=f.type==="select"?(vals[f.key]||f.options[0]):Number(vals[f.key]);});
+    setRes(mod.calcROI(nv,adv));go("result");
+  };
+
+  const WEBHOOK="https://script.google.com/macros/s/AKfycbxMHe7XFCtlp2dTN4AX4pwOiQbUeKmQGA62rMvvbG4s86GLZ43PfVOMQU03fO5fKkF4gg/exec";
+
+  const send=async()=>{
+    const e={};
+    if(!lead.nombre.trim())e.nombre="Requerido";
+    if(!lead.email.includes("@"))e.email="Email inválido";
+    if(!lead.empresa.trim())e.empresa="Requerido";
+    if(Object.keys(e).length){setErrs(e);return;}
+    setSent(true); // Optimistic — muestra confirmación de inmediato
+    try{
+      await fetch(WEBHOOK,{
+        method:"POST",
+        mode:"no-cors",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          nombre:lead.nombre,
+          email:lead.email,
+          whatsapp:lead.whatsapp,
+          empresa:lead.empresa,
+          modulo:mod?mod.label:"",
+          roi:res?res.roi+"%":""
+        })
+      });
+    }catch(err){
+      console.error("Webhook error:",err);
+    }
+  };
+
+  const roiPos=res&&Number(res.roi)>0;
+
+  // ── HEADER
+  const header=h("header",{style:{background:"#243342EE",borderBottom:"1px solid #2A3A4A",padding:"0 20px",position:"sticky",top:0,zIndex:99,backdropFilter:"blur(12px)"}},
+    h("div",{style:{maxWidth:960,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",height:62}},
+      h("div",{style:{display:"flex",alignItems:"center",gap:10,cursor:"pointer"},onClick:()=>go("home")},
+        h("img",{src:LOGO,alt:"Nova Synergy",style:{height:34,objectFit:"contain"},onError:e=>{e.target.style.display="none";}}),
+        h("div",null,
+          h("div",{style:{fontSize:13,fontWeight:800,letterSpacing:".08em"}},"NOVA SYNERGY"),
+          h("div",{style:{fontSize:9,color:C.gold,fontWeight:700,letterSpacing:".1em"}},"#LaSinergiaEsLaEstrategia")
+        )
+      ),
+      h("div",{style:{fontSize:10,color:C.gray,fontWeight:700,letterSpacing:".1em"}},"CALCULADORA ROI · LATAM")
+    )
+  );
+
+  // ── FOOTER
+  const footer=h("footer",{style:{borderTop:"1px solid #2A3A4A",padding:"22px 20px",marginTop:40}},
+    h("div",{style:{maxWidth:960,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}},
+      h("div",{style:{fontSize:11,color:C.gray}},"© 2025 Nova Synergy & Tech Partners · ",h("span",{style:{color:C.gold}},"roi.novasynergy.tech")),
+      h("div",{style:{fontSize:10,color:"#8B9BAD77",fontStyle:"italic"}},"Proyecciones orientativas basadas en benchmarks LATAM.")
+    )
+  );
+
+  // ── HOME
+  if(step==="home") return h(Fragment,null,header,
+    h("div",{ref:topRef}),
+    h("div",{style:{background:"linear-gradient(135deg,#1A3045,#1C2935 55%,#1A2530)",borderBottom:"1px solid #C9A84C22",padding:"54px 20px 46px"}},
+      h("div",{style:{maxWidth:720,margin:"0 auto",textAlign:"center"}},
+        h("div",{className:"fu",style:{animationDelay:".05s"}},
+          h("span",{style:{display:"inline-block",background:"#C9A84C18",border:"1px solid #C9A84C40",borderRadius:100,padding:"5px 18px",fontSize:10,fontWeight:700,letterSpacing:".13em",color:C.gold,marginBottom:22}},"DIAGNÓSTICO ESTRATÉGICO GRATUITO")
+        ),
+        h("h1",{className:"fu",style:{animationDelay:".12s",fontSize:"clamp(24px,4.5vw,42px)",fontWeight:900,lineHeight:1.15,marginBottom:18}},
+          "¿Cuánto le cuesta a tu empresa ",h("span",{className:"gold-txt"},"no invertir")," en lo que importa?"
+        ),
+        h("p",{className:"fu",style:{animationDelay:".2s",fontSize:14,color:C.gray,lineHeight:1.8,maxWidth:540,margin:"0 auto 10px"}},
+          "Selecciona el área, ingresa tus datos y obtén el ROI proyectado con fórmula desglosada y benchmarks LATAM."
+        )
+      )
+    ),
+    h("div",{style:{maxWidth:960,margin:"0 auto",padding:"42px 20px"}},
+      h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(245px,1fr))",gap:18}},
+        MODULES.map((m,i)=>h("div",{key:m.id,className:"hov fu",style:{animationDelay:`${.06+i*.06}s`,background:C.navyL,border:"1.5px solid #2A3A4A",borderRadius:16,padding:24,position:"relative",overflow:"hidden"},onClick:()=>pick(m)},
+          h("div",{style:{position:"absolute",top:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${m.color},${m.color}55)`}}),
+          m.hasAdvanced&&h("div",{style:{position:"absolute",top:12,right:12,background:`${m.color}25`,border:`1px solid ${m.color}50`,borderRadius:4,padding:"2px 7px",fontSize:9,fontWeight:700,color:m.color,letterSpacing:".06em"}},"AVANZADO"),
+          h("div",{style:{fontSize:32,marginBottom:12}},m.icon),
+          h("div",{style:{fontSize:15,fontWeight:800,marginBottom:3}},m.label),
+          h("div",{style:{fontSize:10,color:m.color,fontWeight:700,letterSpacing:".07em",marginBottom:10}},m.subtitle),
+          h("div",{style:{fontSize:12,color:C.gray,lineHeight:1.65}},m.description),
+          h("div",{style:{marginTop:18,fontSize:11,fontWeight:700,color:m.color}},"Calcular ROI →")
+        ))
+      ),
+      h("div",{style:{marginTop:40,textAlign:"center",padding:"28px 20px",background:"#C9A84C0D",border:"1px solid #C9A84C25",borderRadius:14}},
+        h("div",{style:{fontSize:12,color:C.gold,fontWeight:700,marginBottom:6}},"¿Prefieres orientación directa de un consultor?"),
+        h("div",{style:{fontSize:13,color:C.gray,marginBottom:18}},"Agenda una sesión estratégica gratuita de 30 min"),
+        h("a",{href:CAL,target:"_blank",rel:"noopener noreferrer",style:{textDecoration:"none"}},
+          h("button",{className:"btn",style:{background:`linear-gradient(135deg,${C.gold},${C.goldL})`,color:C.navy,padding:"12px 28px",fontSize:13}},"📅 Agendar sesión con Nova Synergy & Tech Partners")
+        )
+      )
+    ),
+    footer
+  );
+
+  // ── CALC
+  if(step==="calc"&&mod) return h(Fragment,null,header,
+    h("div",{ref:topRef}),
+    h("div",{style:{maxWidth:680,margin:"0 auto",padding:"40px 20px"}},
+      h("button",{className:"btn",onClick:()=>go("home"),style:{background:"transparent",border:"1px solid #2E3D4E",color:C.gray,padding:"7px 18px",fontSize:11,marginBottom:28}},"← Volver"),
+      h("div",{className:"fu",style:{background:C.navyL,border:"1.5px solid #2A3A4A",borderRadius:18,overflow:"hidden"}},
+        h("div",{style:{background:`linear-gradient(135deg,${mod.color}22,${mod.color}06)`,borderBottom:`1px solid ${mod.color}30`,padding:"24px 28px"}},
+          h("div",{style:{fontSize:32,marginBottom:8}},mod.icon),
+          h("h2",{style:{fontSize:20,fontWeight:800,marginBottom:4}},mod.label),
+          h("div",{style:{fontSize:10,color:mod.color,fontWeight:700,letterSpacing:".08em",marginBottom:8}},mod.subtitle),
+          h("div",{style:{fontSize:12,color:C.gray,lineHeight:1.6}},mod.description)
+        ),
+        h("div",{style:{padding:28}},
+          h(FormulaBox,{formula:mod.formula,vars:mod.formulaVars,color:mod.color}),
+          mod.hasAdvanced&&h(AdvToggle,{on:adv,onToggle:()=>setAdv(a=>!a),color:mod.color}),
+          h("div",{style:{display:"flex",flexDirection:"column",gap:20}},
+            mod.fields.map(f=>h(Field,{key:f.key,f,vals,setVals,errs,setErrs}))
+          ),
+          adv&&mod.fieldsAdvanced&&h("div",{style:{marginTop:20,padding:"16px 18px",background:`${mod.color}0E`,border:`1px solid ${mod.color}30`,borderRadius:12}},
+            h("div",{style:{fontSize:11,fontWeight:700,color:mod.color,letterSpacing:".07em",marginBottom:16}},"⚙ VARIABLES AVANZADAS"),
+            h("div",{style:{display:"flex",flexDirection:"column",gap:18}},
+              mod.fieldsAdvanced.map(f=>h(Field,{key:f.key,f,vals,setVals,errs,setErrs}))
+            )
+          ),
+          h("button",{className:"btn",onClick:calc,style:{width:"100%",background:`linear-gradient(135deg,${mod.color},${mod.color}99)`,color:"#fff",padding:"15px",fontSize:14,borderRadius:10,marginTop:28}},
+            adv?"Calcular ROI avanzado →":"Calcular mi ROI →"
+          )
+        )
+      )
+    ),
+    footer
+  );
+
+  // ── RESULT
+  if(step==="result"&&mod&&res) return h(Fragment,null,header,
+    h("div",{ref:topRef}),
+    h("div",{style:{maxWidth:740,margin:"0 auto",padding:"40px 20px"}},
+      h("button",{className:"btn",onClick:()=>go("calc"),style:{background:"transparent",border:"1px solid #2E3D4E",color:C.gray,padding:"7px 18px",fontSize:11,marginBottom:28}},"← Ajustar datos"),
+      mod.hasAdvanced&&h("div",{className:"fu",style:{marginBottom:16,display:"flex",alignItems:"center",gap:8}},
+        h("span",{style:{fontSize:10,fontWeight:700,padding:"4px 10px",borderRadius:20,background:adv?`${mod.color}30`:"#1A2634",border:`1px solid ${adv?mod.color+"50":"#2E3D4E"}`,color:adv?mod.color:C.gray}},adv?"⚙ Modo Avanzado":"Modo Básico"),
+        h("button",{className:"btn",onClick:()=>go("calc"),style:{background:"transparent",border:`1px solid ${mod.color}40`,color:mod.color,padding:"4px 12px",fontSize:10}},"Cambiar modo")
+      ),
+      // ROI Hero
+      h("div",{className:"fu",style:{background:"linear-gradient(135deg,#1E3348,#192C3E)",border:"1.5px solid #C9A84C44",borderRadius:20,padding:"38px 28px",textAlign:"center",marginBottom:20,position:"relative",overflow:"hidden"}},
+        h("div",{style:{position:"absolute",top:0,left:0,right:0,height:4,background:`linear-gradient(90deg,${C.gold},${mod.color},${C.gold})`}}),
+        h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:".1em",color:C.gold,marginBottom:14}},"ROI PROYECTADO — "+mod.label.toUpperCase()),
+        h("div",{style:{fontSize:"clamp(58px,11vw,88px)",fontWeight:900,lineHeight:1,color:roiPos?C.gold:C.danger,marginBottom:8}},(roiPos?"+":"")+res.roi+"%"),
+        h("div",{style:{fontSize:13,color:C.gray,marginBottom:26}},"Retorno sobre inversión anual estimado"),
+        h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}},
+          [{label:"BENEFICIO NETO ANUAL",val:res.beneficio,col:C.gold},{label:"IMPACTO MENSUAL",val:res.mensual,col:C.blue}].map(({label,val,col})=>
+            h("div",{key:label,style:{background:`${col}14`,border:`1px solid ${col}30`,borderRadius:12,padding:"16px 12px"}},
+              h("div",{style:{fontSize:9,color:col,fontWeight:700,letterSpacing:".09em",marginBottom:8}},label),
+              h("div",{style:{fontSize:"clamp(17px,3.5vw,23px)",fontWeight:800,color:Number(val)>=0?col:C.danger}},fmt(val))
+            )
+          )
+        )
+      ),
+      // Fórmula aplicada
+      h("div",{className:"fu",style:{animationDelay:".1s",background:"#111E28",border:`1px solid ${mod.color}30`,borderRadius:14,marginBottom:20,overflow:"hidden"}},
+        h("div",{onClick:()=>setShowFA(f=>!f),style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 18px",cursor:"pointer"}},
+          h("span",{style:{fontSize:11,fontWeight:700,color:mod.color,letterSpacing:".07em"}},"📐 FÓRMULA APLICADA CON TUS DATOS"),
+          h("span",{style:{color:mod.color,transition:"transform .2s",display:"inline-block",transform:showFA?"rotate(180deg)":"rotate(0deg)"}},"▾")
+        ),
+        showFA&&h("div",{style:{padding:"4px 18px 18px",borderTop:`1px solid ${mod.color}20`}},
+          h("div",{style:{background:"#0D1B26",borderRadius:8,padding:"12px 16px",fontFamily:"monospace",fontSize:12,color:C.goldL,lineHeight:1.9}},
+            res.formulaAplicada.map((line,i)=>h("div",{key:i},line))
+          )
+        )
+      ),
+      // Waterfall
+      h("div",{className:"fu",style:{animationDelay:".18s",background:C.navyL,border:"1.5px solid #2A3A4A",borderRadius:16,padding:24,marginBottom:20}},
+        h("div",{style:{fontSize:11,fontWeight:700,letterSpacing:".09em",color:C.gray,marginBottom:18}},"📊 DESGLOSE EN CASCADA"),
+        h(Waterfall,{items:res.desglose,modColor:mod.color}),
+        h("div",{style:{marginTop:14,padding:"9px 14px",background:"#1A2634",borderRadius:7,fontSize:10,color:C.gray,lineHeight:1.6}},
+          "⚠️ ",h("strong",{style:{color:C.white}},"Nota metodológica:")," Proyecciones basadas en benchmarks LATAM. Resultados reales varían según cada organización."
+        )
+      ),
+      // Impacto
+      h("div",{className:"fu",style:{animationDelay:".26s",background:"linear-gradient(135deg,#3A1818,#251010)",border:"1.5px solid #E05C5C40",borderRadius:16,padding:28,marginBottom:20,textAlign:"center"}},
+        h("div",{style:{fontSize:26,marginBottom:10}},"⚠️"),
+        h("div",{style:{fontSize:15,fontWeight:800,marginBottom:8}},"Sin acción, podrías estar dejando ir"),
+        h("div",{style:{fontSize:"clamp(26px,5.5vw,38px)",fontWeight:900,color:C.danger,marginBottom:10}},fmt(Math.abs(res.mensual))+" MXN al mes"),
+        h("div",{style:{fontSize:13,color:"#E08888",lineHeight:1.65}},
+          "en costos evitables, riesgos latentes o ingresos no capturados en ",h("strong",{style:{color:C.white}},mod.label),". El costo de no actuar es real — y medible."
+        )
+      ),
+      // CTA
+      h("div",{className:"fu",style:{animationDelay:".34s",background:"linear-gradient(135deg,#C9A84C16,#3B9DD20C)",border:"1.5px solid #C9A84C30",borderRadius:16,padding:28,textAlign:"center",marginBottom:20}},
+        h("div",{style:{fontSize:17,fontWeight:800,marginBottom:7}},"¿Quieres un diagnóstico personalizado?"),
+        h("div",{style:{fontSize:13,color:C.gray,marginBottom:22,lineHeight:1.65}},"Recibe este análisis con recomendaciones específicas para tu empresa. Un consultor de Nova Synergy te contactará en menos de 24 horas."),
+        h("div",{style:{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}},
+          h("button",{className:"btn",onClick:()=>{setErrs({});go("lead");},style:{background:`linear-gradient(135deg,${C.gold},${C.goldL})`,color:C.navy,padding:"13px 26px",fontSize:13}},"📋 Recibir mi diagnóstico"),
+          h("a",{href:CAL,target:"_blank",rel:"noopener noreferrer",style:{textDecoration:"none"}},
+            h("button",{className:"btn",style:{background:"transparent",border:`1.5px solid ${C.blue}`,color:C.blue,padding:"13px 26px",fontSize:13}},"📅 Agendar sesión directamente")
+          )
+        )
+      ),
+      h("div",{style:{textAlign:"center"}},
+        h("button",{className:"btn",onClick:()=>go("home"),style:{background:"transparent",color:C.gray,padding:"9px 18px",fontSize:12}},"← Evaluar otra área")
+      )
+    ),
+    footer
+  );
+
+  // ── LEAD
+  if(step==="lead") return h(Fragment,null,header,
+    h("div",{ref:topRef}),
+    h("div",{style:{maxWidth:520,margin:"0 auto",padding:"40px 20px"}},
+      !sent?h("div",{className:"fu",style:{background:C.navyL,border:"1.5px solid #2A3A4A",borderRadius:20,overflow:"hidden"}},
+        h("div",{style:{background:"linear-gradient(135deg,#C9A84C1C,#3B9DD210)",borderBottom:"1px solid #C9A84C28",padding:"26px 28px",textAlign:"center"}},
+          h("div",{style:{fontSize:30,marginBottom:10}},"📋"),
+          h("h2",{style:{fontSize:18,fontWeight:800,marginBottom:6}},"Recibe tu diagnóstico completo"),
+          h("div",{style:{fontSize:12,color:C.gray,lineHeight:1.7}},"Un consultor de Nova Synergy te contactará en menos de 24 hrs con recomendaciones personalizadas.")
+        ),
+        h("div",{style:{padding:28,display:"flex",flexDirection:"column",gap:18}},
+          [{key:"nombre",label:"Nombre completo",placeholder:"Tu nombre",type:"text"},{key:"email",label:"Correo electrónico",placeholder:"tu@empresa.com",type:"email"},{key:"whatsapp",label:"WhatsApp / Teléfono",placeholder:"+52 55 0000 0000",type:"tel"},{key:"empresa",label:"Empresa",placeholder:"Nombre de tu empresa",type:"text"}].map((f,i)=>
+            h("div",{key:f.key,className:"fu",style:{animationDelay:`${i*.07}s`}},
+              h("label",{style:{fontSize:12,fontWeight:700,display:"block",marginBottom:7}},f.label),
+              h("input",{className:"inp",type:f.type,placeholder:f.placeholder,value:lead[f.key],onChange:e=>{setLead(p=>({...p,[f.key]:e.target.value}));setErrs(p=>({...p,[f.key]:null}));}}),
+              errs[f.key]&&h("div",{style:{fontSize:11,color:C.danger,marginTop:5}},"⚠ "+errs[f.key])
+            )
+          ),
+          h("div",{style:{fontSize:10,color:C.gray,lineHeight:1.6}},"🔒 Tu información es privada. No compartimos tus datos con terceros."),
+          h("button",{className:"btn",onClick:send,style:{background:`linear-gradient(135deg,${C.gold},${C.goldL})`,color:C.navy,padding:"15px",fontSize:14,borderRadius:10}},"Enviar y recibir mi diagnóstico →"),
+          h("div",{style:{textAlign:"center"}},
+            h("div",{style:{fontSize:11,color:C.gray,marginBottom:10}},"O si prefieres agendar directamente:"),
+            h("a",{href:CAL,target:"_blank",rel:"noopener noreferrer",style:{textDecoration:"none"}},
+              h("button",{className:"btn",style:{background:"transparent",border:`1.5px solid ${C.blue}`,color:C.blue,padding:"11px 22px",fontSize:12}},"📅 Agendar con Nova Synergy & Tech Partners")
+            )
+          )
+        )
+      ):h("div",{className:"fu",style:{background:C.navyL,border:"1.5px solid #C9A84C44",borderRadius:20,padding:"50px 28px",textAlign:"center"}},
+        h("div",{style:{fontSize:52,marginBottom:18}},"🎉"),
+        h("h2",{style:{fontSize:22,fontWeight:900,marginBottom:10}},"¡Listo, "+lead.nombre.split(" ")[0]+"!"),
+        h("div",{style:{fontSize:14,color:C.gray,lineHeight:1.8,marginBottom:28}},"Recibimos tu solicitud. Un consultor de Nova Synergy te contactará en las próximas ",h("strong",{style:{color:C.white}},"24 horas")," con tu diagnóstico personalizado."),
+        h("div",{style:{background:"#C9A84C14",border:"1px solid #C9A84C30",borderRadius:12,padding:22,marginBottom:24}},
+          h("div",{style:{fontSize:11,color:C.gold,fontWeight:700,marginBottom:6}},"¿NO QUIERES ESPERAR?"),
+          h("div",{style:{fontSize:12,color:C.gray,marginBottom:14}},"Agenda ahora tu sesión estratégica gratuita de 30 min"),
+          h("a",{href:CAL,target:"_blank",rel:"noopener noreferrer",style:{textDecoration:"none"}},
+            h("button",{className:"btn",style:{background:`linear-gradient(135deg,${C.gold},${C.goldL})`,color:C.navy,padding:"12px 26px",fontSize:13}},"📅 Agendar mi sesión ahora")
+          )
+        ),
+        h("button",{className:"btn",onClick:()=>{setSent(false);setLead({nombre:"",email:"",whatsapp:"",empresa:""});go("home");},style:{background:"transparent",color:C.gray,padding:"9px 18px",fontSize:12}},"← Evaluar otra área")
+      )
+    ),
+    footer
+  );
+
+  return h("div",null);
+}
+
+const root=ReactDOM.createRoot(document.getElementById("app"));
+root.render(React.createElement(App));
+</script>
+</body>
+</html>
