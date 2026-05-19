@@ -266,7 +266,7 @@ const{useState,useRef,createElement:h,Fragment}=React;
 const fmt=n=>new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN",maximumFractionDigits:0}).format(n||0);
 const ps=n=>`${Number(n).toFixed(1)}%`;
 const CAL="https://calendar.app.google/TDVtgv9HcFwV4jUg9";
-const LOGO_SRC="https://imgproxy.gamma.app/resize/quality:80/resizing_type:fit/width:400/https://cdn.gamma.app/lswd4yd2vwh8bm1/afa7887f6edd4ddebb3a4ad2f9cef2b2/original/NS-lg-txt-tras.png";
+const LOGO_SRC="Nova_Synergy_logo_text.jpeg";
 
 function Tip({text}){
   return h("span",{className:"tip"},
@@ -470,7 +470,7 @@ function App(){
     h("div",{className:"hdr-in"},
       h("div",{className:"logo",onClick:()=>go("home")},
         h("img",{src:LOGO_SRC,alt:"Nova Synergy",className:"logo-img",
-          style:{filter:"brightness(0) saturate(100%) invert(14%) sepia(22%) saturate(697%) hue-rotate(169deg) brightness(95%) contrast(94%)"},
+          style:{height:44,width:"auto",objectFit:"contain"},
           onError:e=>{e.target.style.display="none"}}),
         h("div",{className:"logo-text"},
           h("span",{className:"name"},"Nova Synergy"),
